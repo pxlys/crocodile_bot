@@ -10,8 +10,7 @@ HOW TO RUN:
 2. Fill in your BOT_TOKEN and GROUP_CHAT_ID below
 3. Run:  python bot.py
 """
-import os
-print("🔥 BOT_TOKEN FROM ENV:", os.getenv("8651953345:AAH1iu5WKv4zBObAC6qoex5bk6ziMFA6Jrw"))
+
 
 import asyncio
 import logging
@@ -42,9 +41,9 @@ from telegram.ext import (
 #   ⚙️  CONFIGURATION  — FILL THESE IN!
 # ─────────────────────────────────────────────
 
-import os
-BOT_TOKEN = os.getenv("8651953345:AAH1iu5WKv4zBObAC6qoex5bk6ziMFA6Jrw")
-GROUP_CHAT_ID = os.getenv("-5021002697`")
+
+BOT_TOKEN="8651953345:AAH1iu5WKv4zBObAC6qoex5bk6ziMFA6Jrw"
+GROUP_CHAT_ID="-5021002697`"
 
 # Set up logging so we can see what the bot is doing
 logging.basicConfig(
