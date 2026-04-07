@@ -42,8 +42,8 @@ from telegram.ext import (
 # ─────────────────────────────────────────────
 
 
-BOT_TOKEN="8651953345:AAH1iu5WKv4zBObAC6qoex5bk6ziMFA6Jrw"
-GROUP_CHAT_ID="-5021002697`"
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+GROUP_CHAT_ID = os.getenv("GROUP_CHAT_ID")
 
 # Set up logging so we can see what the bot is doing
 logging.basicConfig(
@@ -424,46 +424,48 @@ def main():
         print("❌ ERROR: Please fill in your BOT_TOKEN in bot.py!")
         return
 
+    if GROUP_CHAT_ID.endswith('`'):
+        print("❌ ERROR: Remove backtick from GROUP_CHAT_ID!")
+        return
+
     print("🐊 Starting Crocodile Safety Alert Bot...")
 
     # Build the application
-app = (
- Application.builder()
-.token(BOT_TOKEN)
-.connect_timeout(30)
-.read_timeout(30)
-.write_timeout(30)
-.pool_timeout(30)
-.build()
-)
-_app_ref = app
+    app = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .connect_timeout(30)
+        .read_timeout(30)
+        .write_timeout(30)
+        .pool_timeout(30)
+        .build()
+    )
+    _app_ref = app
 
     # Register command handlers
-app.add_handler(CommandHandler("start", cmd_start))
-app.add_handler(CommandHandler("help", cmd_help))
-app.add_handler(CommandHandler("list_zones", cmd_list_zones))
-app.add_handler(CommandHandler("check_location", cmd_check_location))
-app.add_handler(CommandHandler("alert", cmd_alert))
+    app.add_handler(CommandHandler("start", cmd_start))
+    app.add_handler(CommandHandler("help", cmd_help))
+    app.add_handler(CommandHandler("list_zones", cmd_list_zones))
+    app.add_handler(CommandHandler("check_location", cmd_check_location))
+    app.add_handler(CommandHandler("alert", cmd_alert))
 
-    # Register location handler (when user shares GPS)
-app.add_handler(MessageHandler(filters.LOCATION, handle_location))
+    # Location handler
+    app.add_handler(MessageHandler(filters.LOCATION, handle_location))
 
-    # Register inline button handler
-app.add_handler(CallbackQueryHandler(handle_callback))
+    # Inline buttons
+    app.add_handler(CallbackQueryHandler(handle_callback))
 
-    # Start the scheduler in a separate background thread
-scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-scheduler_thread.start()
+    # Start the scheduler
+    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+    scheduler_thread.start()
 
-print("✅ Bot is running! Press Ctrl+C to stop.")
-print(f"⏰ Scheduled alerts: 06:00 and 18:00 daily")
-print(f"📍 Location checking: ENABLED")
-print(f"🗺️  Danger zones loaded: {len(DANGER_ZONES)}")
+    print("✅ Bot is running! Press Ctrl+C to stop.")
+    print(f"⏰ Scheduled alerts: 06:00 and 18:00 daily")
+    print(f"📍 Location checking: ENABLED")
+    print(f"🗺️  Danger zones loaded: {len(DANGER_ZONES)}")
 
-
-    # Start polling (bot listens for messages)
-app.run_polling(allowed_updates=Update.ALL_TYPES)
-
+    # Start polling
+    app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     main()
