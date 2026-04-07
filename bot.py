@@ -242,10 +242,6 @@ async def async_scheduler():
                 await _app_ref.bot.send_message(chat_id=GROUP_CHAT_ID, text=msg, parse_mode="Markdown")
         await asyncio.sleep(60)  # Check every minute
 
-# In main():
-_app_ref.create_task(async_scheduler())
-app.run_polling(allowed_updates=Update.ALL_TYPES)
-
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler for /start command."""
     keyboard = [
@@ -431,8 +427,10 @@ async def debug_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     global _app_ref
-
-    if BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
+  _app_ref.create_task(async_scheduler())
+app.run_polling(allowed_updates=Update.ALL_TYPES)
+    
+  if BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
         print("❌ ERROR: Please fill in your BOT_TOKEN in bot.py!")
         return
 
