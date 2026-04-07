@@ -10,6 +10,8 @@ HOW TO RUN:
 2. Fill in your BOT_TOKEN and GROUP_CHAT_ID below
 3. Run:  python bot.py
 """
+import os
+print("🔥 BOT_TOKEN FROM ENV:", os.getenv("8651953345:AAH1iu5WKv4zBObAC6qoex5bk6ziMFA6Jrw"))
 
 import asyncio
 import logging
