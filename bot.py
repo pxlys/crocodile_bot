@@ -427,10 +427,8 @@ async def debug_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     global _app_ref
-  _app_ref.create_task(async_scheduler())
-app.run_polling(allowed_updates=Update.ALL_TYPES)
-    
-  if BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
+
+    if BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
         print("❌ ERROR: Please fill in your BOT_TOKEN in bot.py!")
         return
 
@@ -457,14 +455,13 @@ app.run_polling(allowed_updates=Update.ALL_TYPES)
     # Register inline buttons
     app.add_handler(CallbackQueryHandler(handle_callback))
 
-    # Start the scheduler in a background thread
-    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-    scheduler_thread.start()
+    # Create async scheduler task (runs in background)
+    app.create_task(async_scheduler())
 
     print("✅ Bot is running! Press Ctrl+C to stop.")
     print(f"⏰ Scheduled alerts: 06:00 and 18:00 daily")
     print(f"📍 Location checking: ENABLED")
     print(f"🗺️  Danger zones loaded: {len(DANGER_ZONES)}")
 
-    # Start polling (async v20+)
-    app.run_polling()
+    # Start polling (async)
+    app.run_polling(allowed_updates=Update.ALL_TYPES)
