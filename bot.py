@@ -41,7 +41,7 @@ from telegram.ext import (
 # ─────────────────────────────────────────────
 
 import os
-BOT_TOKEN = os.getenv("8651953345:AAGxQmNywvHkeHBUbouLE8mRN35wFfu9qbo")
+BOT_TOKEN = os.getenv("8651953345:AAH1iu5WKv4zBObAC6qoex5bk6ziMFA6Jrw")
 GROUP_CHAT_ID = os.getenv("-5021002697`")
 
 # Set up logging so we can see what the bot is doing
