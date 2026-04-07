@@ -206,7 +206,6 @@ def main():
 
     # Scheduler
     threading.Thread(target=run_scheduler, daemon=True).start()
-    app.create_task(async_scheduler())
 
     print(f"✅ Bot is running! Danger zones loaded: {len(DANGER_ZONES)}")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
