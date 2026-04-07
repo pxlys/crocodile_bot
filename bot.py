@@ -233,6 +233,18 @@ def format_location_result(user_lat, user_lon) -> str:
 # ─────────────────────────────────────────────
 #   🤖  BOT COMMAND HANDLERS
 # ─────────────────────────────────────────────
+async def async_scheduler():
+    while True:
+        now = datetime.now()
+        if now.hour in [6, 18] and now.minute == 0:
+            if _app_ref:
+                msg = format_scheduled_alert()
+                await _app_ref.bot.send_message(chat_id=GROUP_CHAT_ID, text=msg, parse_mode="Markdown")
+        await asyncio.sleep(60)  # Check every minute
+
+# In main():
+_app_ref.create_task(async_scheduler())
+app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler for /start command."""
