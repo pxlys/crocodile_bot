@@ -430,16 +430,8 @@ def main():
 
     print("🐊 Starting Crocodile Safety Alert Bot...")
 
-    # Build the application
-    app = (
-        Application.builder()
-        .token(BOT_TOKEN)
-        .connect_timeout(30)
-        .read_timeout(30)
-        .write_timeout(30)
-        .pool_timeout(30)
-        .build()
-    )
+    # Build the application (async v20+ style)
+    app = Application.builder().token(BOT_TOKEN).build()
     _app_ref = app
 
     # Register command handlers
@@ -449,13 +441,13 @@ def main():
     app.add_handler(CommandHandler("check_location", cmd_check_location))
     app.add_handler(CommandHandler("alert", cmd_alert))
 
-    # Location handler
+    # Register location handler (user shares GPS)
     app.add_handler(MessageHandler(filters.LOCATION, handle_location))
 
-    # Inline buttons
+    # Register inline buttons
     app.add_handler(CallbackQueryHandler(handle_callback))
 
-    # Start the scheduler
+    # Start the scheduler in a background thread
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     scheduler_thread.start()
 
@@ -464,8 +456,5 @@ def main():
     print(f"📍 Location checking: ENABLED")
     print(f"🗺️  Danger zones loaded: {len(DANGER_ZONES)}")
 
-    # Start polling
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
-
-if __name__ == "__main__":
-    main()
+    # Start polling (async v20+)
+    app.run_polling()
