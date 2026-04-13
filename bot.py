@@ -196,7 +196,6 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # FIX: updated label to clarify DM-only for location check
         [InlineKeyboardButton("📍 Check My Location (only works in DM)", callback_data="check_location")],
         [InlineKeyboardButton("🗺️ List All Danger Zones",                callback_data="list_zones")],
-        [InlineKeyboardButton("🎣 Fisher Safety Alert",                  callback_data="fisher_alert")],
         [InlineKeyboardButton("📹 Live CCTV Feed",                       callback_data="cctv")],
         [InlineKeyboardButton("ℹ️ About This Bot",                       callback_data="about")],
     ]
@@ -219,7 +218,6 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/check_location — Check if you are near a danger zone <i>(DM only)</i>\n"
         "/list_zones — List all danger zones\n"
         "/alert — Send general safety alert now\n"
-        "/fisher — Send fisher warning now\n"
         "/cctv — Get live CCTV feed link\n"
         "/help — Show this help message\n\n"
         "<i>Automatic alerts at 6:00 AM and 6:00 PM daily.</i>",
@@ -250,8 +248,6 @@ async def cmd_check_location(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def cmd_alert(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(format_scheduled_alert(), parse_mode="HTML")
 
-async def cmd_fisher(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(format_fisher_alert(), parse_mode="HTML")
 
 async def cmd_cctv(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -290,8 +286,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     elif query.data == "list_zones":
         await query.message.reply_text(build_zones_text(), parse_mode="HTML")
-    elif query.data == "fisher_alert":
-        await query.message.reply_text(format_fisher_alert(), parse_mode="HTML")
     elif query.data == "cctv":
         await query.message.reply_text(
             f"📹 <b>Live CCTV Feed</b>\n\n"
@@ -390,7 +384,6 @@ def main():
     app.add_handler(CommandHandler("list_zones",     cmd_list_zones))
     app.add_handler(CommandHandler("check_location", cmd_check_location))
     app.add_handler(CommandHandler("alert",          cmd_alert))
-    app.add_handler(CommandHandler("fisher",         cmd_fisher))
     app.add_handler(CommandHandler("cctv",           cmd_cctv))
     app.add_handler(MessageHandler(filters.LOCATION, handle_location))
     app.add_handler(CallbackQueryHandler(handle_callback))
