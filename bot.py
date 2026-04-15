@@ -40,7 +40,11 @@ DANGER_ZONES = [
 
 CCTV_URL = "http://192.168.0.54:5000/"
 
-# ── Helpers ──────────────────────────────────────────────────
+# ── Globals ───────────────────────────────────────────────────
+_app_ref = None
+_event_loop = None
+
+# ── Helpers ───────────────────────────────────────────────────
 
 def haversine_distance(lat1, lon1, lat2, lon2):
     R = 6371000
@@ -59,7 +63,10 @@ def line():
 # ── Message builders ──────────────────────────────────────────
 
 def format_scheduled_alert():
-    now = datetime.now().strftime("%d %b %Y | %H:%M")
+    # Use MYT (UTC+8) for display
+    from datetime import timezone, timedelta
+    myt = timezone(timedelta(hours=8))
+    now = datetime.now(myt).strftime("%d %b %Y | %H:%M")
     zones_text = ""
     for z in DANGER_ZONES:
         zones_text += (
@@ -84,7 +91,9 @@ def format_scheduled_alert():
     )
 
 def format_fisher_alert():
-    now = datetime.now()
+    from datetime import timezone, timedelta
+    myt = timezone(timedelta(hours=8))
+    now = datetime.now(myt)
     time_str = now.strftime("%d %b %Y | %H:%M")
     if now.hour < 12:
         time_context = "🌅 <b>AMARAN PAGI — Sebelum Anda Turun Memancing!</b>"
@@ -185,15 +194,10 @@ def build_zones_text():
     text += "<i>Use /check_location (in DM) to check your distance.</i>"
     return text
 
-# ── Global app reference for scheduler ──
-_app_ref = None
-_event_loop = None  # FIX: store the event loop explicitly
-
-# ── Handlers ─────────────────────────────────────────────────
+# ── Handlers ──────────────────────────────────────────────────
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
-        # FIX: updated label to clarify DM-only for location check
         [InlineKeyboardButton("📍 Check My Location (only works in DM)", callback_data="check_location")],
         [InlineKeyboardButton("🗺️ List All Danger Zones",                callback_data="list_zones")],
         [InlineKeyboardButton("📹 Live CCTV Feed",                       callback_data="cctv")],
@@ -220,7 +224,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/alert — Send general safety alert now\n"
         "/cctv — Get live CCTV feed link\n"
         "/help — Show this help message\n\n"
-        "<i>Automatic alerts at 6:00 AM and 6:00 PM daily.</i>",
+        "<i>Automatic alerts at 6:00 AM and 6:00 PM daily (MYT).</i>",
         parse_mode="HTML",
     )
 
@@ -228,7 +232,6 @@ async def cmd_list_zones(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(build_zones_text(), parse_mode="HTML")
 
 async def cmd_check_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Warn if used in a group
     if update.message.chat.type != "private":
         await update.message.reply_text(
             "⚠️ <b>Sila guna arahan ini dalam DM (chat persendirian) dengan bot.</b>\n\n"
@@ -247,7 +250,6 @@ async def cmd_check_location(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def cmd_alert(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(format_scheduled_alert(), parse_mode="HTML")
-
 
 async def cmd_cctv(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -268,7 +270,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     if query.data == "check_location":
-        # If in group, redirect to DM
         if query.message.chat.type != "private":
             await query.message.reply_text(
                 "⚠️ <b>Fungsi ini hanya boleh digunakan dalam DM.</b>\n\n"
@@ -306,10 +307,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML",
         )
 
-# ── Scheduler ────────────────────────────────────────────────
-# FIX: Instead of using _app_ref._loop (unreliable),
-# we store the running event loop explicitly when main() starts,
-# then use asyncio.run_coroutine_threadsafe with that stored loop.
+# ── Scheduler ─────────────────────────────────────────────────
+# Railway servers run UTC. Malaysia (MYT) = UTC+8.
+# 6:00 AM MYT = 22:00 UTC (previous night)
+# 6:00 PM MYT = 10:00 UTC
 
 def _send_general_alert():
     if _app_ref and _event_loop:
@@ -322,7 +323,7 @@ def _send_general_alert():
             _event_loop,
         )
         try:
-            future.result(timeout=15)  # wait up to 15s for confirmation
+            future.result(timeout=15)
             logger.info("General alert sent successfully.")
         except Exception as e:
             logger.error(f"Failed to send general alert: {e}")
@@ -344,25 +345,25 @@ def _send_fisher_alert():
             logger.error(f"Failed to send fisher alert: {e}")
 
 def run_scheduler():
-    schedule.every().day.at("06:00").do(_send_fisher_alert)
-    schedule.every().day.at("06:01").do(_send_general_alert)
-    schedule.every().day.at("18:00").do(_send_fisher_alert)
-    schedule.every().day.at("18:01").do(_send_general_alert)
-    logger.info("Scheduler ready: 06:00 and 18:00 daily")
+    # 6:00 AM MYT = 22:00 UTC | 6:00 PM MYT = 10:00 UTC
+    schedule.every().day.at("22:00").do(_send_fisher_alert)
+    schedule.every().day.at("22:01").do(_send_general_alert)
+    schedule.every().day.at("10:00").do(_send_fisher_alert)
+    schedule.every().day.at("10:01").do(_send_general_alert)
+    logger.info("Scheduler ready: 06:00 and 18:00 MYT (22:00 and 10:00 UTC)")
     while True:
         schedule.run_pending()
         time.sleep(30)
 
-# ── Post-init hook to capture the running event loop ─────────
+# ── Post-init hook ────────────────────────────────────────────
 
 async def on_startup(app: Application):
-    """Called after the bot starts — captures the running event loop."""
     global _event_loop
     _event_loop = asyncio.get_running_loop()
-    logger.info(f"Event loop captured. Scheduler will use this loop.")
+    logger.info("Event loop captured. Scheduler will use this loop.")
     logger.info(f"Bot started. Zones: {len(DANGER_ZONES)} | Group: {GROUP_CHAT_ID}")
 
-# ── Main ─────────────────────────────────────────────────────
+# ── Main ──────────────────────────────────────────────────────
 
 def main():
     global _app_ref
@@ -374,7 +375,7 @@ def main():
     app = (
         Application.builder()
         .token(BOT_TOKEN)
-        .post_init(on_startup)   # FIX: capture event loop after bot starts
+        .post_init(on_startup)
         .build()
     )
     _app_ref = app
@@ -388,12 +389,11 @@ def main():
     app.add_handler(MessageHandler(filters.LOCATION, handle_location))
     app.add_handler(CallbackQueryHandler(handle_callback))
 
-    # Start scheduler in background thread
     threading.Thread(target=run_scheduler, daemon=True).start()
 
     fisher_count = sum(1 for z in DANGER_ZONES if z.get("fisher_warning"))
     print(f"Bot running! Zones: {len(DANGER_ZONES)} | Fisher zones: {fisher_count}")
-    print("Scheduled: 06:00 and 18:00 daily")
+    print("Scheduled: 06:00 and 18:00 MYT (22:00 and 10:00 UTC)")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
