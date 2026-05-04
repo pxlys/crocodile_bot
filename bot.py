@@ -38,7 +38,7 @@ DANGER_ZONES = [
     {"name": "Pulau Tiga Waters",         "lat": 5.6700, "lon": 115.6700, "radius_m": 2500, "risk": "MEDIUM", "notes": "Surrounding waters reported with crocodile activity.",   "fisher_warning": False, "fisher_note": ""},
 ]
 
-CCTV_URL = "http://192.168.0.54:5000/"
+CCTV_URL = "http://127.0.0.1:5000"
 
 # ── Globals ───────────────────────────────────────────────────
 _app_ref = None
